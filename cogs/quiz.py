@@ -1,12 +1,20 @@
+
 import random
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from utils.quiz_questions import QUIZ_QUESTIONS
+from utils.xp import add_xp
 
+
+# ==========================================================
+# QUIZ ANSWER BUTTON
+# ==========================================================
 
 class QuizButton(discord.ui.Button):
+
     def __init__(self, label, correct_answer):
         super().__init__(
             label=label,
@@ -19,7 +27,7 @@ class QuizButton(discord.ui.Button):
 
         view = self.view
 
-        # Only the person who started the quiz can answer
+        # Only the player who started the quiz can answer.
         if interaction.user.id != view.player.id:
             await interaction.response.send_message(
                 "💀 Start your own quiz with `/quiz`.",
@@ -27,17 +35,18 @@ class QuizButton(discord.ui.Button):
             )
             return
 
-        # Prevent multiple answers
+        # Prevent duplicate answers.
         if view.answered:
             await interaction.response.send_message(
-                "You already answered this question!",
+                "⚠️ You already answered this quiz!",
                 ephemeral=True
             )
             return
 
         view.answered = True
+        view.stop()
 
-        # Disable all buttons
+        # Disable all answer buttons.
         for item in view.children:
             item.disabled = True
 
@@ -45,45 +54,64 @@ class QuizButton(discord.ui.Button):
 
             self.style = discord.ButtonStyle.success
 
-            view.score += 10
-
-            result = (
-                f"✅ **Correct!**\n\n"
-                f"🔥 +10 points\n"
-                f"🏆 Score: **{view.score}**"
+            # Award XP and record one quiz win.
+            xp_result = add_xp(
+                interaction.user.id,
+                amount=25,
+                quiz_win=True
             )
+
+            message = (
+                "✅ **CORRECT ANSWER!**\n\n"
+                "🔥 **+25 XP**\n"
+                f"⭐ Level: **{xp_result['level']}**\n"
+                f"🏆 Total XP: **{xp_result['xp']}**\n"
+                f"🧠 Quiz Wins: **{xp_result['quiz_wins']}**"
+            )
+
+            # Announce newly unlocked achievements.
+            if xp_result["unlocked"]:
+                message += "\n\n🎖️ **Achievement Unlocked!**\n"
+                message += "\n".join(xp_result["unlocked"])
 
         else:
 
             self.style = discord.ButtonStyle.danger
 
-            # Highlight the correct button
+            # Highlight the correct answer.
             for item in view.children:
                 if item.label == self.correct_answer:
                     item.style = discord.ButtonStyle.success
 
-            result = (
-                f"❌ **Wrong!**\n\n"
-                f"Correct answer: **{self.correct_answer}**\n"
-                f"🏆 Score: **{view.score}**"
+            message = (
+                "❌ **WRONG ANSWER!**\n\n"
+                f"✅ Correct answer: **{self.correct_answer}**\n\n"
+                "💀 No XP this time. Better luck next round!"
             )
 
+        # Update the original quiz message.
         await interaction.response.edit_message(view=view)
 
+        # Send the result privately to the player.
         await interaction.followup.send(
-            result,
+            message,
             ephemeral=True
         )
 
 
+# ==========================================================
+# QUIZ VIEW
+# ==========================================================
+
 class QuizView(discord.ui.View):
+
     def __init__(self, player, question):
         super().__init__(timeout=30)
 
         self.player = player
         self.question = question
-        self.score = 0
         self.answered = False
+        self.message = None
 
         options = question["options"].copy()
         random.shuffle(options)
@@ -91,8 +119,8 @@ class QuizView(discord.ui.View):
         for option in options:
             self.add_item(
                 QuizButton(
-                    option,
-                    question["answer"]
+                    label=option,
+                    correct_answer=question["answer"]
                 )
             )
 
@@ -106,29 +134,41 @@ class QuizView(discord.ui.View):
         for item in self.children:
             item.disabled = True
 
+        # Disable expired buttons in Discord.
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
+
+
+# ==========================================================
+# QUIZ COG
+# ==========================================================
 
 class Quiz(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
 
-    @discord.app_commands.command(
+    @app_commands.command(
         name="quiz",
         description="Test your knowledge with Campus Chaos 🧠"
     )
-    @discord.app_commands.describe(
+    @app_commands.describe(
         category="Choose your quiz category"
     )
-    @discord.app_commands.choices(
+    @app_commands.choices(
         category=[
-            discord.app_commands.Choice(
+            app_commands.Choice(
                 name="💻 Computer Science",
                 value="computer_science"
             ),
-            discord.app_commands.Choice(
+            app_commands.Choice(
                 name="🌍 General Knowledge",
                 value="general"
             ),
-            discord.app_commands.Choice(
+            app_commands.Choice(
                 name="💀 Chaos Mode",
                 value="chaos"
             )
@@ -137,10 +177,17 @@ class Quiz(commands.Cog):
     async def quiz(
         self,
         interaction: discord.Interaction,
-        category: discord.app_commands.Choice[str]
+        category: app_commands.Choice[str]
     ):
 
-        questions = QUIZ_QUESTIONS[category.value]
+        questions = QUIZ_QUESTIONS.get(category.value, [])
+
+        if not questions:
+            await interaction.response.send_message(
+                "❌ No questions available for this category.",
+                ephemeral=True
+            )
+            return
 
         question = random.choice(questions)
 
@@ -151,24 +198,24 @@ class Quiz(commands.Cog):
         )
 
         embed.add_field(
-            name="Category",
+            name="📚 Category",
             value=category.name,
             inline=True
         )
 
         embed.add_field(
-            name="Reward",
-            value="🔥 10 points",
+            name="🔥 Reward",
+            value="25 XP for a correct answer",
             inline=True
         )
 
         embed.set_footer(
-            text="You have 30 seconds • Choose wisely"
+            text="⏱️ 30 seconds • Choose wisely!"
         )
 
         view = QuizView(
-            interaction.user,
-            question
+            player=interaction.user,
+            question=question
         )
 
         await interaction.response.send_message(
@@ -176,6 +223,14 @@ class Quiz(commands.Cog):
             view=view
         )
 
+        # Save the message so buttons can be
+        # disabled when the quiz times out.
+        view.message = await interaction.original_response()
+
+
+# ==========================================================
+# LOAD QUIZ COG
+# ==========================================================
 
 async def setup(bot):
     await bot.add_cog(Quiz(bot))
