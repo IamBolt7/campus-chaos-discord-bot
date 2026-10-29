@@ -3,9 +3,11 @@ import asyncio
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from database.db import create_tables
 
 # Load variables from .env
 load_dotenv()
+create_tables()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -27,9 +29,11 @@ bot = commands.Bot(
 async def setup_hook():
     await bot.load_extension("cogs.memes")
     await bot.load_extension("cogs.quiz")
+    await bot.load_extension("cogs.attendance")
     
     print("😂 Meme system loaded!")
     print("🧠 Quiz system loaded!")
+    print("📚 Attendance system loaded!")
 
 
 bot.setup_hook = setup_hook
