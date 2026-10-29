@@ -26,7 +26,10 @@ bot = commands.Bot(
 )
 async def setup_hook():
     await bot.load_extension("cogs.memes")
+    await bot.load_extension("cogs.quiz")
+    
     print("😂 Meme system loaded!")
+    print("🧠 Quiz system loaded!")
 
 
 bot.setup_hook = setup_hook
@@ -149,11 +152,17 @@ async def help_command(interaction: discord.Interaction):
         inline=False
     )
     
+    embed.add_field(
+        name="🧠 Quiz",
+        value=(
+            "`/quiz` — Play a random quiz"
+        ),
+        inline=False
+    )
     
     embed.add_field(
         name="🚧 Coming Soon",
         value=(
-            "🧠 Quiz Game\n"
             "📊 Attendance Tracker\n"
             "😈 Bunk Calculator\n"
             "🏆 XP & Leaderboard\n"
