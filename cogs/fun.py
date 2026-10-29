@@ -1,6 +1,6 @@
 
 import random
-
+from utils.xp import add_xp
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -28,6 +28,7 @@ class Fun(commands.Cog):
         )
 
         await interaction.response.send_message(embed=embed)
+        add_xp(interaction.user.id, 10)
 
     # ==========================================
     # 2. DICE ROLL
@@ -55,6 +56,7 @@ class Fun(commands.Cog):
         )
 
         await interaction.response.send_message(embed=embed)
+        add_xp(interaction.user.id, 10)
 
     # ==========================================
     # 3. MAGIC 8-BALL
@@ -112,6 +114,7 @@ class Fun(commands.Cog):
         )
 
         await interaction.response.send_message(embed=embed)
+        add_xp(interaction.user.id, 10)
 
     # ==========================================
     # 4. FRIENDLY ROAST
@@ -151,6 +154,7 @@ class Fun(commands.Cog):
         embed.set_footer(text="Just jokes! Don't take it seriously.")
 
         await interaction.response.send_message(embed=embed)
+        add_xp(interaction.user.id, 10)
 
     # ==========================================
     # 5. RIZZ GENERATOR
@@ -185,6 +189,7 @@ class Fun(commands.Cog):
         embed.set_footer(text="Campus Chaos Certified Rizz™")
 
         await interaction.response.send_message(embed=embed)
+        add_xp(interaction.user.id, 10)
 
     # ==========================================
     # 6. RANDOM CHOICE
@@ -231,6 +236,7 @@ class Fun(commands.Cog):
         )
 
         await interaction.response.send_message(embed=embed)
+        add_xp(interaction.user.id, 10)
 
 
 async def setup(bot):

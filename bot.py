@@ -51,7 +51,9 @@ class CampusChaos(commands.Bot):
             ("cogs.memes", "😂 Meme System"),
             ("cogs.quiz", "🧠 Quiz System"),
             ("cogs.attendance", "📚 Attendance System"),
-            ("cogs.fun", "🎲 Fun Commands")
+            ("cogs.fun", "🎲 Fun Commands"),
+            ("cogs.levels", "🏆 XP & Levels"),
+            ("cogs.music", "🎵 Music Player")
         ]
 
         for extension, label in extensions:
@@ -277,17 +279,26 @@ async def help_command(interaction: discord.Interaction):
         ),
         inline=False
     )
+    
+    # ==========================================================
+    # MUSIC COMMANDS
+    # ==========================================================
 
-    # UPCOMING FEATURES
     embed.add_field(
-        name="🚧 COMING SOON",
+        name="🎵 MUSIC SYSTEM",
         value=(
-            "🏆 XP & Leaderboards\n"
-            "🎖️ Achievements\n"
-            "🎵 Music Player"
+            "`/join` — Join voice channel\n"
+            "`/play` — Play music from a supported URL\n"
+            "`/pause` — Pause current song\n"
+            "`/resume` — Resume playback\n"
+            "`/skip` — Skip current song\n"
+            "`/queue` — View music queue\n"
+            "`/nowplaying` — Show current song\n"
+            "`/stop` — Stop music and disconnect"
         ),
         inline=False
     )
+
 
     embed.set_footer(
         text="Campus Chaos v1.1 • Let the chaos begin!"
@@ -312,3 +323,4 @@ if __name__ == "__main__":
 
     except discord.LoginFailure:
         print("❌ Invalid Discord token. Check your .env file.")
+        

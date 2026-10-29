@@ -22,6 +22,24 @@ def create_tables():
             UNIQUE(user_id, subject_name)
         )
     """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            xp INTEGER NOT NULL DEFAULT 0,
+            commands_used INTEGER NOT NULL DEFAULT 0,
+            quiz_wins INTEGER NOT NULL DEFAULT 0
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS achievements (
+            user_id TEXT NOT NULL,
+            achievement_id TEXT NOT NULL,
+            unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, achievement_id)
+        )
+    """)
 
     conn.commit()
     conn.close()
